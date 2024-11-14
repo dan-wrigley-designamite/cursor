@@ -78,9 +78,8 @@ export default function Home() {
           rel="noopener noreferrer"
         >
           <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
+            src="/google-favicon.ico"
+            alt="Google icon"
             width={16}
             height={16}
           />

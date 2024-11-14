@@ -1,9 +1,9 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { validateApiKey } from '@/services/apiKeyOperations'
 
-export default function ProtectedPage() {
+function ProtectedContent() {
   const searchParams = useSearchParams()
   const [validationStatus, setValidationStatus] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -55,5 +55,13 @@ export default function ProtectedPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ProtectedPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <ProtectedContent />
+    </Suspense>
   )
 } 
