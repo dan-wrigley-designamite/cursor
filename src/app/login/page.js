@@ -39,6 +39,8 @@ export default function Login() {
         <Image 
             src="https://www.google.com/favicon.ico"
             alt="Google"
+            width={20}
+            height={20}
             className="w-5 h-5"
           />
           {loading ? 'Loading...' : 'Continue with Google'}
