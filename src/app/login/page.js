@@ -25,10 +25,12 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: `${origin}/dashboard`
         }
       });
     } catch (error) {
