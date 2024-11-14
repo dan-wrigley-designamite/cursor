@@ -1,10 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
+import Image from 'next/image';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      if (user) {
+        router.push('/dashboard');
+      }
+    };
+    
+    checkUser();
+  }, [router]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -12,7 +28,7 @@ export default function Login() {
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'http://localhost:3000/dashboard'
+          redirectTo: `${window.location.origin}/dashboard`
         }
       });
     } catch (error) {
@@ -36,7 +52,7 @@ export default function Login() {
           disabled={loading}
           className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-        <Image 
+          <Image 
             src="https://www.google.com/favicon.ico"
             alt="Google"
             width={20}
