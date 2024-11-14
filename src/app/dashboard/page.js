@@ -176,24 +176,75 @@ export default function Dashboard() {
 
   useEffect(() => {
     const handleAuth = async () => {
-      // Get hash parameters if they exist
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      
-      if (accessToken) {
-        // If we have an access token, set the session
-        await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: hashParams.get('refresh_token')
-        });
-        // Clear the hash without triggering a reload
-        window.history.replaceState(null, '', window.location.pathname);
-      }
+      try {
+        // Get hash parameters if they exist
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        
+        if (accessToken) {
+          // If we have an access token, set the session
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: hashParams.get('refresh_token')
+          });
+          // Clear the hash without triggering a reload
+          window.history.replaceState(null, '', window.location.pathname);
+        }
 
-      // Verify session
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
+        // Verify session and get user data
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/login');
+          return;
+        }
+
+        // Get the authenticated user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (!user || userError) {
+          console.error('Error getting user:', userError);
+          return;
+        }
+
+        // First check if user exists
+        const { data: existingUser, error: checkError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors if no record exists
+
+        if (checkError) {
+          console.error('Error checking existing user:', checkError);
+          return;
+        }
+
+        // Only insert if user doesn't exist
+        if (!existingUser) {
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert([
+              {
+                id: user.id,
+                email: user.email,
+                name: user.user_metadata?.full_name || user.email?.split('@')[0],
+                image: user.user_metadata?.avatar_url || null
+              }
+            ]);
+
+          if (insertError) {
+            console.error('Error inserting user:', insertError);
+            toast.error('Failed to create user profile');
+            return;
+          }
+
+          toast.success('User profile created successfully');
+        }
+
+        // Set the user state regardless of whether we inserted or not
+        setUser(user);
+
+      } catch (error) {
+        console.error('Auth error:', error);
+        toast.error('Authentication error');
       }
     };
 
@@ -227,7 +278,7 @@ export default function Dashboard() {
         .select('id')
         .limit(1);
 
-      console.log('Test query result:', { testData, testError });
+      console.log(' result:', { testData, testError });
 
       if (testError) throw testError;
 
@@ -256,7 +307,8 @@ export default function Dashboard() {
           {
             name,
             key: newKey,
-            usage: 0
+            usage: 0,
+            user_id: user.id
           }
         ])
         .select()
